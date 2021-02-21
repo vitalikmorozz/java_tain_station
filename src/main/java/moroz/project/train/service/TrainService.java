@@ -1,12 +1,12 @@
 package moroz.project.train.service;
 
 import moroz.project.train.entity.Train;
-import org.springframework.data.jpa.repository.JpaRepository;
+import moroz.project.train.repository.TrainRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TrainService extends BasicCrudService<Train> {
-    public TrainService(JpaRepository<Train, Long> repository) {
+    public TrainService(TrainRepository repository) {
         super(repository);
     }
 }

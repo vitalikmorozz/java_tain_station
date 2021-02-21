@@ -1,12 +1,12 @@
 package moroz.project.train.service;
 
 import moroz.project.train.entity.Stoppage;
-import org.springframework.data.jpa.repository.JpaRepository;
+import moroz.project.train.repository.StoppageRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class StoppageService extends BasicCrudService<Stoppage> {
-    public StoppageService(JpaRepository<Stoppage, Long> repository) {
+    public StoppageService(StoppageRepository repository) {
         super(repository);
     }
 }
