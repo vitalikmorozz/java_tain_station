@@ -1,15 +1,17 @@
 package moroz.project.train.entity;
 
 import lombok.Data;
+import moroz.project.train.interfaces.IBaseEntity;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity
-public class Route {
+public class Route implements IBaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne

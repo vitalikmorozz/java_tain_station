@@ -1,18 +1,16 @@
 package moroz.project.train.entity;
 
 import lombok.Data;
+import moroz.project.train.interfaces.IBaseEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.List;
 
 @Data
 @Entity
-public class Station {
+public class Station implements IBaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private String name;

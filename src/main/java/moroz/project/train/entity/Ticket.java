@@ -1,18 +1,19 @@
 package moroz.project.train.entity;
 
 import lombok.Data;
+import moroz.project.train.interfaces.IBaseEntity;
 
 import javax.persistence.*;
 
 @Data
 @Entity
-public class Ticket {
+public class Ticket implements IBaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     private String passengerFirstName;

@@ -1,15 +1,16 @@
 package moroz.project.train.entity;
 
 import lombok.Data;
+import moroz.project.train.interfaces.IBaseEntity;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-public class Stoppage {
+public class Stoppage implements IBaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private Integer stoppageOrder;
@@ -23,8 +24,6 @@ public class Stoppage {
     private Station station;
 
     @ManyToOne
-    @JoinColumn(name = "route_id", nullable = false)
+    @JoinColumn(name = "route_id", nullable = true)
     private Route route;
-
-
 }

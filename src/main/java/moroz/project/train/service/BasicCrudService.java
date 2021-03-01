@@ -1,32 +1,33 @@
 package moroz.project.train.service;
 
 import lombok.RequiredArgsConstructor;
+import moroz.project.train.interfaces.IBaseEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 @RequiredArgsConstructor
-public abstract class BasicCrudService<T> {
-    final protected JpaRepository<T, Long> repository;
+public abstract class BasicCrudService<TEntity extends IBaseEntity> {
+    final protected JpaRepository<TEntity, Long> repository;
 
-    public T findById(Long id) {
+    public TEntity findById(Long id) {
         return repository.findById(id).orElse(null);
     }
 
-    public List<T> findAll() {
+    public List<TEntity> findAll() {
         return repository.findAll();
     }
 
-    public T create(T entity) { return repository.save(entity); }
+    public TEntity create(TEntity entity) { return repository.save(entity); }
 
-    public T update(Long id, T entity) {
+    public TEntity update(Long id, TEntity entity) {
         if(repository.existsById(id))
             return repository.save(entity);
         else
             return null;
     }
 
-    public void delete(T entity) {
+    public void delete(TEntity entity) {
         repository.delete(entity);
     }
 
