@@ -7,6 +7,7 @@ import moroz.project.train.dto.Route.ResponseRouteDTO;
 import moroz.project.train.dto.Stoppage.ResponseStoppageDTO;
 import moroz.project.train.entity.Route;
 import moroz.project.train.entity.Stoppage;
+import moroz.project.train.exceptions.ConflictException;
 import moroz.project.train.interfaces.services.IRouteService;
 import moroz.project.train.repository.RouteRepository;
 import moroz.project.train.repository.StoppageRepository;
@@ -71,6 +72,7 @@ public class RouteV2Service implements IRouteService {
 
         Route route = routeRepository.getOne(routeId);
         Stoppage stoppage = stoppageRepository.getOne(stoppageId);
+        if(route.getStoppages().contains(stoppage)) throw new ConflictException("Route already have stoppage with id " + stoppageId);
         stoppage.setRoute(route);
         stoppageRepository.save(stoppage);
 
