@@ -25,7 +25,7 @@ public abstract class DtoCrudApiController<TEntity extends IBaseEntity, TRequest
         final int listSize = list.size();
         int start = 0;
         int end = listSize;
-        if(listSize > size) {
+        if (listSize > size) {
             start = Math.min(listSize, size * (page - 1));
             end = Math.min(listSize, page * size);
         }

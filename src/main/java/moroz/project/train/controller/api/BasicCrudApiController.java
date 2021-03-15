@@ -2,8 +2,8 @@ package moroz.project.train.controller.api;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
-import moroz.project.train.service.BasicCrudService;
 import moroz.project.train.interfaces.IBaseEntity;
+import moroz.project.train.service.BasicCrudService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public abstract class BasicCrudApiController<TEntity extends IBaseEntity> {
         final int listSize = list.size();
         int start = 0;
         int end = listSize;
-        if(listSize > size) {
+        if (listSize > size) {
             start = Math.min(listSize, size * (page - 1));
             end = Math.min(listSize, page * size);
         }

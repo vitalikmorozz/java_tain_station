@@ -18,10 +18,12 @@ public abstract class BasicCrudService<TEntity extends IBaseEntity> {
         return repository.findAll();
     }
 
-    public TEntity create(TEntity entity) { return repository.save(entity); }
+    public TEntity create(TEntity entity) {
+        return repository.save(entity);
+    }
 
     public TEntity update(Long id, TEntity entity) {
-        if(repository.existsById(id))
+        if (repository.existsById(id))
             return repository.save(entity);
         else
             return null;
@@ -31,5 +33,7 @@ public abstract class BasicCrudService<TEntity extends IBaseEntity> {
         repository.delete(entity);
     }
 
-    public void deleteById(Long id) { repository.deleteById(id); }
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
 }

@@ -4,7 +4,6 @@ import javassist.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import moroz.project.train.dto.Route.RequestRouteDTO;
 import moroz.project.train.dto.Route.ResponseRouteDTO;
-import moroz.project.train.dto.Stoppage.ResponseStoppageDTO;
 import moroz.project.train.entity.Route;
 import moroz.project.train.entity.Stoppage;
 import moroz.project.train.exceptions.ConflictException;
@@ -34,45 +33,42 @@ public class RouteV2Service implements IRouteService {
 
     @Override
     public ResponseRouteDTO findById(Long id) throws NotFoundException {
-        if(!routeRepository.existsById(id)) throw new NotFoundException("Route with specified id not found");
-
-        return modelMapper.map(routeRepository.findById(id).orElse(null), ResponseRouteDTO.class);
+        return modelMapper.map(routeRepository.findById(id).orElseThrow(() -> new NotFoundException("Route with specified id not found")), ResponseRouteDTO.class);
     }
 
     @Override
     public ResponseRouteDTO update(Long id, RequestRouteDTO dto) throws NotFoundException {
-        if(!routeRepository.existsById(id)) throw new NotFoundException("Route with specified id not found");
-        if(!trainRepository.existsById(dto.getTrainId())) throw new NotFoundException("Train with specified id not found");
+        if (!routeRepository.existsById(id)) throw new NotFoundException("Route with specified id not found");
 
         Route entity = modelMapper.map(dto, Route.class);
         entity.setId(id);
-        entity.setTrain(trainRepository.getOne(dto.getTrainId()));
+        entity.setTrain(trainRepository.findById(dto.getTrainId()).orElseThrow(() -> new NotFoundException("Train with specified id not found")));
         return modelMapper.map(routeRepository.save(entity), ResponseRouteDTO.class);
     }
 
     @Override
     public ResponseRouteDTO create(RequestRouteDTO dto) throws NotFoundException {
-        if(!trainRepository.existsById(dto.getTrainId())) throw new NotFoundException("Train with specified id not found");
-
         Route entity = modelMapper.map(dto, Route.class);
-        entity.setTrain(trainRepository.getOne(dto.getTrainId()));
+        entity.setTrain(trainRepository.findById(dto.getTrainId()).orElseThrow(() -> new NotFoundException("Train with specified id not found")));
         return modelMapper.map(routeRepository.save(entity), ResponseRouteDTO.class);
     }
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!routeRepository.existsById(id)) throw new NotFoundException("Route with specified id not found");
+        if (!routeRepository.existsById(id)) throw new NotFoundException("Route with specified id not found");
 
         routeRepository.deleteById(id);
     }
 
     public ResponseRouteDTO addStoppageById(Long routeId, Long stoppageId) throws NotFoundException {
-        if(!routeRepository.existsById(routeId)) throw new NotFoundException("Route with specified id not found");
-        if(!stoppageRepository.existsById(stoppageId)) throw new NotFoundException("Stoppage with specified id not found");
+        if (!routeRepository.existsById(routeId)) throw new NotFoundException("Route with specified id not found");
+        if (!stoppageRepository.existsById(stoppageId))
+            throw new NotFoundException("Stoppage with specified id not found");
 
         Route route = routeRepository.getOne(routeId);
         Stoppage stoppage = stoppageRepository.getOne(stoppageId);
-        if(route.getStoppages().contains(stoppage)) throw new ConflictException("Route already have stoppage with id " + stoppageId);
+        if (route.getStoppages().contains(stoppage))
+            throw new ConflictException("Route already have stoppage with id " + stoppageId);
         stoppage.setRoute(route);
         stoppageRepository.save(stoppage);
 

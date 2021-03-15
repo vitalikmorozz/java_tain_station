@@ -27,14 +27,12 @@ public class StationV2Service implements IStationService {
 
     @Override
     public ResponseStationDTO findById(Long id) throws NotFoundException {
-        if(!stationRepository.existsById(id)) throw new NotFoundException("Station with specified id not found");
-
-        return modelMapper.map(stationRepository.findById(id).orElse(null), ResponseStationDTO.class);
+        return modelMapper.map(stationRepository.findById(id).orElseThrow(() -> new NotFoundException("Station with specified id not found")), ResponseStationDTO.class);
     }
 
     @Override
     public ResponseStationDTO update(Long id, RequestStationDTO dto) throws NotFoundException {
-        if(!stationRepository.existsById(id)) throw new NotFoundException("Station with specified id not found");
+        if (!stationRepository.existsById(id)) throw new NotFoundException("Station with specified id not found");
 
         Station entity = modelMapper.map(dto, Station.class);
         entity.setId(id);
@@ -49,7 +47,7 @@ public class StationV2Service implements IStationService {
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!stationRepository.existsById(id)) throw new NotFoundException("Station with specified id not found");
+        if (!stationRepository.existsById(id)) throw new NotFoundException("Station with specified id not found");
 
         stationRepository.deleteById(id);
     }

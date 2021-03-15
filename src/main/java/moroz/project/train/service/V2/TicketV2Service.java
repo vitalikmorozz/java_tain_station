@@ -30,34 +30,30 @@ public class TicketV2Service implements ITicketService {
 
     @Override
     public ResponseTicketDTO findById(Long id) throws NotFoundException {
-        if(!ticketRepository.existsById(id)) throw new NotFoundException("Ticket with specified id not found");
-
-        return modelMapper.map(ticketRepository.findById(id).orElse(null), ResponseTicketDTO.class);
+        return modelMapper.map(ticketRepository.findById(id).orElseThrow(() -> new NotFoundException("Ticket with specified id not found")), ResponseTicketDTO.class);
     }
 
     @Override
     public ResponseTicketDTO update(Long id, RequestTicketDTO dto) throws NotFoundException {
-        if(!ticketRepository.existsById(id)) throw new NotFoundException("Ticket with specified id not found");
-        if(!routeRepository.existsById(dto.getRouteId())) throw new NotFoundException("Route with specified id not found");
-
         Ticket entity = modelMapper.map(dto, Ticket.class);
         entity.setId(id);
-        entity.setRoute(routeRepository.getOne(dto.getRouteId()));
+        entity.setRoute(routeRepository.findById(dto.getRouteId()).orElseThrow(() -> new NotFoundException("Route with specified id not found")));
         return modelMapper.map(ticketRepository.save(entity), ResponseTicketDTO.class);
     }
 
     @Override
     public ResponseTicketDTO create(RequestTicketDTO dto) throws NotFoundException {
-        if(!routeRepository.existsById(dto.getRouteId())) throw new NotFoundException("Route with specified id not found");
+        if (!routeRepository.existsById(dto.getRouteId()))
+            throw new NotFoundException("Route with specified id not found");
 
         Ticket entity = modelMapper.map(dto, Ticket.class);
-        entity.setRoute(routeRepository.getOne(dto.getRouteId()));
+        entity.setRoute(routeRepository.findById(dto.getRouteId()).orElseThrow(() -> new NotFoundException("Route with specified id not found")));
         return modelMapper.map(ticketRepository.save(entity), ResponseTicketDTO.class);
     }
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!ticketRepository.existsById(id)) throw new NotFoundException("Ticket with specified id not found");
+        if (!ticketRepository.existsById(id)) throw new NotFoundException("Ticket with specified id not found");
 
         ticketRepository.deleteById(id);
     }

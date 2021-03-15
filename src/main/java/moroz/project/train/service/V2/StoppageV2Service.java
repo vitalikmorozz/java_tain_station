@@ -29,34 +29,29 @@ public class StoppageV2Service implements IStoppageService {
 
     @Override
     public ResponseStoppageDTO findById(Long id) throws NotFoundException {
-        if(!stoppageRepository.existsById(id)) throw new NotFoundException("Stoppage with specified id not found");
-
-        return modelMapper.map(stoppageRepository.findById(id).orElse(null), ResponseStoppageDTO.class);
+        return modelMapper.map(stoppageRepository.findById(id).orElseThrow(() -> new NotFoundException("Stoppage with specified id not found")), ResponseStoppageDTO.class);
     }
 
     @Override
     public ResponseStoppageDTO update(Long id, RequestStoppageDTO dto) throws NotFoundException {
-        if(!stoppageRepository.existsById(id)) throw new NotFoundException("Stoppage with specified id not found");
-        if(!stationRepository.existsById(dto.getStationId())) throw new NotFoundException("Station with specified id not found");
+        if (!stoppageRepository.existsById(id)) throw new NotFoundException("Stoppage with specified id not found");
 
         Stoppage entity = modelMapper.map(dto, Stoppage.class);
         entity.setId(id);
-        entity.setStation(stationRepository.getOne(dto.getStationId()));
+        entity.setStation(stationRepository.findById(dto.getStationId()).orElseThrow(() -> new NotFoundException("Station with specified id not found")));
         return modelMapper.map(stoppageRepository.save(entity), ResponseStoppageDTO.class);
     }
 
     @Override
     public ResponseStoppageDTO create(RequestStoppageDTO dto) throws NotFoundException {
-        if(!stationRepository.existsById(dto.getStationId())) throw new NotFoundException("Station with specified id not found");
-
         Stoppage entity = modelMapper.map(dto, Stoppage.class);
-        entity.setStation(stationRepository.getOne(dto.getStationId()));
+        entity.setStation(stationRepository.findById(dto.getStationId()).orElseThrow(() -> new NotFoundException("Station with specified id not found")));
         return modelMapper.map(stoppageRepository.save(entity), ResponseStoppageDTO.class);
     }
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!stoppageRepository.existsById(id)) throw new NotFoundException("Stoppage with specified id not found");
+        if (!stoppageRepository.existsById(id)) throw new NotFoundException("Stoppage with specified id not found");
 
         stoppageRepository.deleteById(id);
     }

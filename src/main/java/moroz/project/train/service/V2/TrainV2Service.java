@@ -27,14 +27,12 @@ public class TrainV2Service implements ITrainService {
 
     @Override
     public ResponseTrainDTO findById(Long id) throws NotFoundException {
-        if(!trainRepository.existsById(id)) throw new NotFoundException("Train with specified id not found");
-
-        return modelMapper.map(trainRepository.findById(id).orElse(null), ResponseTrainDTO.class);
+        return modelMapper.map(trainRepository.findById(id).orElseThrow(() -> new NotFoundException("Train with specified id not found")), ResponseTrainDTO.class);
     }
 
     @Override
     public ResponseTrainDTO update(Long id, RequestTrainDTO dto) throws NotFoundException {
-        if(!trainRepository.existsById(id)) throw new NotFoundException("Train with specified id not found");
+        if (!trainRepository.existsById(id)) throw new NotFoundException("Train with specified id not found");
 
         Train entity = modelMapper.map(dto, Train.class);
         entity.setId(id);
@@ -49,7 +47,7 @@ public class TrainV2Service implements ITrainService {
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!trainRepository.existsById(id)) throw new NotFoundException("Train with specified id not found");
+        if (!trainRepository.existsById(id)) throw new NotFoundException("Train with specified id not found");
 
         trainRepository.deleteById(id);
     }

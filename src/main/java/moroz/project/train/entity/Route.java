@@ -5,7 +5,6 @@ import moroz.project.train.interfaces.IBaseEntity;
 
 import javax.persistence.*;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @Entity

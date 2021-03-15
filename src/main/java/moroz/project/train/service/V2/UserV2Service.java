@@ -27,14 +27,12 @@ public class UserV2Service implements IUserService {
 
     @Override
     public ResponseUserDTO findById(Long id) throws NotFoundException {
-        if(!userRepository.existsById(id)) throw new NotFoundException("User with specified id not found");
-
-        return modelMapper.map(userRepository.findById(id).orElse(null), ResponseUserDTO.class);
+        return modelMapper.map(userRepository.findById(id).orElseThrow(() -> new NotFoundException("User with specified id not found")), ResponseUserDTO.class);
     }
 
     @Override
     public ResponseUserDTO update(Long id, RequestUserDTO dto) throws NotFoundException {
-        if(!userRepository.existsById(id)) throw new NotFoundException("User with specified id not found");
+        if (!userRepository.existsById(id)) throw new NotFoundException("User with specified id not found");
 
         User entity = modelMapper.map(dto, User.class);
         entity.setId(id);
@@ -49,7 +47,7 @@ public class UserV2Service implements IUserService {
 
     @Override
     public void deleteById(Long id) throws NotFoundException {
-        if(!userRepository.existsById(id)) throw new NotFoundException("User with specified id not found");
+        if (!userRepository.existsById(id)) throw new NotFoundException("User with specified id not found");
 
         userRepository.deleteById(id);
     }

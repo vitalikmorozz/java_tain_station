@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v2/route")
 public class RouteV2Controller extends DtoCrudApiController<Route, RequestRouteDTO, ResponseRouteDTO> {
     final RouteV2Service service;
+
     public RouteV2Controller(RouteV2Service service) {
         super(service);
         this.service = service;
