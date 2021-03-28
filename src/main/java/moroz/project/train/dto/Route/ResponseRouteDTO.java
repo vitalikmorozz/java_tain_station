@@ -1,6 +1,9 @@
 package moroz.project.train.dto.Route;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import moroz.project.train.dto.Stoppage.ResponseStoppageDTO;
 import moroz.project.train.dto.Ticket.ResponseTicketDTONoRoute;
 import moroz.project.train.dto.Train.ResponseTrainDTO;
@@ -9,6 +12,9 @@ import moroz.project.train.interfaces.IBaseDTO;
 import java.util.List;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ResponseRouteDTO implements IBaseDTO {
     private Long id;
 
