@@ -1,117 +1,88 @@
 package moroz.project.train.controller.api.V2;
 
-import javassist.NotFoundException;
-import moroz.project.train.dto.Ticket.RequestTicketDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import moroz.project.train.dto.Ticket.ResponseTicketDTO;
-import moroz.project.train.entity.Ticket;
 import moroz.project.train.service.V2.TicketV2Service;
 import moroz.project.train.stabs.TicketStab;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith({MockitoExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 class TicketV2ControllerTest {
-    private TicketV2Controller TicketV2ApiController;
-    @Mock
-    private TicketV2Service TicketV2Service;
+    @MockBean
+    private TicketV2Service ticketService;
 
-    @BeforeEach
-    void setup() {
-        TicketV2ApiController = new TicketV2Controller(TicketV2Service);
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @Test
-    void getAll() {
-        Mockito.when(TicketV2Service.findAll()).thenReturn(List.of(TicketStab.getResponseDto()));
-        assertTrue(TicketV2Service.findAll().size() > 0);
-    }
-
-    @Test
-    void getById() {
-        Ticket ticket = TicketStab.getTicket();
+    private static String asJsonString(final Object obj) {
         try {
-            Mockito.when(TicketV2Service.findById(Mockito.any())).thenReturn(TicketStab.getResponseDto());
-            ResponseTicketDTO result = TicketV2ApiController.getById(TicketStab.ID);
-            assertAll(
-                    () -> assertEquals(ticket.getId(), result.getId()),
-                    () -> assertEquals(ticket.getPassengerFirstName(), result.getPassengerFirstName()),
-                    () -> assertEquals(ticket.getPassengerLastName(), result.getPassengerLastName())
-            );
-            TicketV2Service.findById(0L);
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void deleteById() {
-        try {
-            TicketV2Service.deleteById(TicketStab.ID);
-
-            var captor = ArgumentCaptor.forClass(Long.class);
-            TicketV2Service.create(TicketStab.getRequestDto());
-            Mockito.verify(TicketV2Service, Mockito.atLeastOnce()).deleteById(captor.capture());
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void update() {
-        var captor = ArgumentCaptor.forClass(RequestTicketDTO.class);
-        var captorId = ArgumentCaptor.forClass(Long.class);
-        RequestTicketDTO ticketDTO = TicketStab.getRequestDto();
-        try {
-            Mockito.when(TicketV2Service.update(Mockito.any(), Mockito.any())).thenReturn(TicketStab.getResponseDto());
-
-            ResponseTicketDTO result = TicketV2ApiController.update(TicketStab.ID, TicketStab.getRequestDto());
-            Mockito.verify(TicketV2Service, Mockito.atLeastOnce()).update(captorId.capture(), captor.capture());
-
-            assertAll(
-                    () -> assertEquals(ticketDTO.getRouteId(), result.getRoute().getId()),
-                    () -> assertEquals(ticketDTO.getPassengerFirstName(), result.getPassengerFirstName()),
-                    () -> assertEquals(ticketDTO.getPassengerLastName(), result.getPassengerLastName())
-            );
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void create() {
-        var captor = ArgumentCaptor.forClass(RequestTicketDTO.class);
-        RequestTicketDTO ticketDTO = TicketStab.getRequestDto();
-
-        try {
-            Mockito.when(TicketV2Service.create(Mockito.any())).thenReturn(TicketStab.getResponseDto());
-            ResponseTicketDTO result = TicketV2ApiController.create(TicketStab.getRequestDto());
-
-            Mockito.verify(TicketV2Service, Mockito.atLeastOnce()).create(captor.capture());
-
-            assertAll(
-                    () -> assertEquals(ticketDTO.getRouteId(), result.getRoute().getId()),
-                    () -> assertEquals(ticketDTO.getPassengerFirstName(), result.getPassengerFirstName()),
-                    () -> assertEquals(ticketDTO.getPassengerLastName(), result.getPassengerLastName())
-            );
+            return new ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
+            throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void testGetAll() throws Exception {
+        ArrayList<ResponseTicketDTO> list = new ArrayList<>(Arrays.asList(TicketStab.getResponseDto()));
+        when(ticketService.findAll()).thenReturn(list);
+
+        mvc.perform(get("/api/v2/ticket/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(content().string(containsString(TicketStab.getResponseDto().getPassengerFirstName())));
+    }
+
+    @Test
+    void testGetById() throws Exception {
+        when(ticketService.findById(Mockito.any())).thenReturn(TicketStab.getResponseDto());
+
+        mvc.perform(get("/api/v2/ticket/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TicketStab.getResponseDto().getPassengerFirstName())));
+    }
+
+    @Test
+    void testDeleteById() throws Exception {
+        mvc.perform(delete("/api/v2/ticket/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testCreate() throws Exception {
+        when(ticketService.create(Mockito.any())).thenReturn(TicketStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/ticket/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(TicketStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TicketStab.getResponseDto().getPassengerFirstName())));
+    }
+
+    @Test
+    void testUpdate() throws Exception {
+        when(ticketService.update(Mockito.any(), Mockito.any())).thenReturn(TicketStab.getResponseDto());
+
+        mvc.perform(put("/api/v2/ticket/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(TicketStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TicketStab.getResponseDto().getPassengerFirstName())));
     }
 }
