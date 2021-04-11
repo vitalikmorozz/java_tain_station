@@ -1,112 +1,88 @@
 package moroz.project.train.controller.api.V2;
 
-import javassist.NotFoundException;
-import moroz.project.train.dto.Station.RequestStationDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import moroz.project.train.dto.Station.ResponseStationDTO;
-import moroz.project.train.entity.Station;
 import moroz.project.train.service.V2.StationV2Service;
 import moroz.project.train.stabs.StationStab;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith({MockitoExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 class StationV2ApiControllerTest {
-    private StationV2ApiController stationV2ApiController;
-    @Mock
-    private StationV2Service stationV2Service;
+    @MockBean
+    private StationV2Service stationService;
 
-    @BeforeEach
-    void setup() {
-        stationV2ApiController = new StationV2ApiController(stationV2Service);
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @Test
-    void getAll() {
-        Mockito.when(stationV2Service.findAll()).thenReturn(List.of(StationStab.getResponseDto()));
-        assertTrue(stationV2Service.findAll().size() > 0);
-    }
-
-    @Test
-    void getById() {
-        Station station = StationStab.getStation();
+    private static String asJsonString(final Object obj) {
         try {
-            Mockito.when(stationV2Service.findById(Mockito.any())).thenReturn(StationStab.getResponseDto());
-            ResponseStationDTO result = stationV2ApiController.getById(StationStab.ID);
-            assertAll(
-                    () -> assertEquals(station.getId(), result.getId()),
-                    () -> assertEquals(station.getName(), result.getName())
-            );
-            stationV2Service.findById(0L);
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void deleteById() {
-        try {
-            stationV2Service.deleteById(StationStab.ID);
-
-            var captor = ArgumentCaptor.forClass(Long.class);
-            stationV2Service.create(StationStab.getRequestDto());
-            Mockito.verify(stationV2Service, Mockito.atLeastOnce()).deleteById(captor.capture());
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void update() {
-        var captor = ArgumentCaptor.forClass(RequestStationDTO.class);
-        var captorId = ArgumentCaptor.forClass(Long.class);
-        RequestStationDTO stationDTO = StationStab.getRequestDto();
-        try {
-            Mockito.when(stationV2Service.update(Mockito.any(), Mockito.any())).thenReturn(StationStab.getResponseDto());
-
-            ResponseStationDTO result = stationV2ApiController.update(StationStab.ID, StationStab.getRequestDto());
-            Mockito.verify(stationV2Service, Mockito.atLeastOnce()).update(captorId.capture(), captor.capture());
-
-            assertAll(
-                    () -> assertEquals(stationDTO.getName(), result.getName())
-            );
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void create() {
-        var captor = ArgumentCaptor.forClass(RequestStationDTO.class);
-        RequestStationDTO stationDTO = StationStab.getRequestDto();
-
-        Mockito.when(stationV2Service.create(Mockito.any())).thenReturn(StationStab.getResponseDto());
-        try {
-            ResponseStationDTO result = stationV2ApiController.create(StationStab.getRequestDto());
-
-            Mockito.verify(stationV2Service, Mockito.atLeastOnce()).create(captor.capture());
-
-            assertAll(
-                    () -> assertEquals(stationDTO.getName(), result.getName())
-            );
+            return new ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
+            throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void testGetAll() throws Exception {
+        ArrayList<ResponseStationDTO> list = new ArrayList<>(Arrays.asList(StationStab.getResponseDto()));
+        when(stationService.findAll()).thenReturn(list);
+
+        mvc.perform(get("/api/v2/station/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(content().string(containsString(StationStab.getResponseDto().getName())));
+    }
+
+    @Test
+    void testGetById() throws Exception {
+        when(stationService.findById(Mockito.any())).thenReturn(StationStab.getResponseDto());
+
+        mvc.perform(get("/api/v2/station/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(StationStab.getResponseDto().getName())));
+    }
+
+    @Test
+    void testDeleteById() throws Exception {
+        mvc.perform(delete("/api/v2/station/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testCreate() throws Exception {
+        when(stationService.create(Mockito.any())).thenReturn(StationStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/station/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(StationStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(StationStab.getResponseDto().getName())));
+    }
+
+    @Test
+    void testUpdate() throws Exception {
+        when(stationService.update(Mockito.any(), Mockito.any())).thenReturn(StationStab.getResponseDto());
+
+        mvc.perform(put("/api/v2/station/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(StationStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(StationStab.getResponseDto().getName())));
     }
 }

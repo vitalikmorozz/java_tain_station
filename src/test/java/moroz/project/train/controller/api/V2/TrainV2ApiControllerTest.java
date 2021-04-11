@@ -1,118 +1,88 @@
 package moroz.project.train.controller.api.V2;
 
-import javassist.NotFoundException;
-import moroz.project.train.dto.Train.RequestTrainDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import moroz.project.train.dto.Train.ResponseTrainDTO;
-import moroz.project.train.entity.Train;
 import moroz.project.train.service.V2.TrainV2Service;
 import moroz.project.train.stabs.TrainStab;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith({MockitoExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 class TrainV2ApiControllerTest {
-    private TrainV2ApiController trainV2ApiController;
-    @Mock
-    private TrainV2Service trainV2Service;
+    @MockBean
+    private TrainV2Service trainService;
 
-    @BeforeEach
-    void setup() {
-        trainV2ApiController = new TrainV2ApiController(trainV2Service);
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @Test
-    void getAll() {
-        Mockito.when(trainV2Service.findAll()).thenReturn(List.of(TrainStab.getResponseDto()));
-        assertTrue(trainV2Service.findAll().size() > 0);
-    }
-
-    @Test
-    void getById() {
-        Train train = TrainStab.getTrain();
+    private static String asJsonString(final Object obj) {
         try {
-            Mockito.when(trainV2Service.findById(Mockito.any())).thenReturn(TrainStab.getResponseDto());
-            ResponseTrainDTO result = trainV2ApiController.getById(TrainStab.ID);
-            assertAll(
-                    () -> assertEquals(train.getId(), result.getId()),
-                    () -> assertEquals(train.getDescription(), result.getDescription()),
-                    () -> assertEquals(train.getNumber(), result.getNumber()),
-                    () -> assertEquals(train.getSeatsCount(), result.getSeatsCount())
-            );
-            trainV2Service.findById(0L);
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void deleteById() {
-        try {
-            trainV2Service.deleteById(TrainStab.ID);
-
-            var captor = ArgumentCaptor.forClass(Long.class);
-            trainV2Service.create(TrainStab.getRequestDto());
-            Mockito.verify(trainV2Service, Mockito.atLeastOnce()).deleteById(captor.capture());
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void update() {
-        var captor = ArgumentCaptor.forClass(RequestTrainDTO.class);
-        var captorId = ArgumentCaptor.forClass(Long.class);
-        RequestTrainDTO trainDTO = TrainStab.getRequestDto();
-        try {
-            Mockito.when(trainV2Service.update(Mockito.any(), Mockito.any())).thenReturn(TrainStab.getResponseDto());
-
-            ResponseTrainDTO result = trainV2ApiController.update(TrainStab.ID, TrainStab.getRequestDto());
-            Mockito.verify(trainV2Service, Mockito.atLeastOnce()).update(captorId.capture(), captor.capture());
-
-            assertAll(
-                    () -> assertEquals(trainDTO.getDescription(), result.getDescription()),
-                    () -> assertEquals(trainDTO.getNumber(), result.getNumber()),
-                    () -> assertEquals(trainDTO.getSeatsCount(), result.getSeatsCount())
-            );
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void create() {
-        var captor = ArgumentCaptor.forClass(RequestTrainDTO.class);
-        RequestTrainDTO trainDTO = TrainStab.getRequestDto();
-
-        Mockito.when(trainV2Service.create(Mockito.any())).thenReturn(TrainStab.getResponseDto());
-        try {
-            ResponseTrainDTO result = trainV2ApiController.create(TrainStab.getRequestDto());
-
-            Mockito.verify(trainV2Service, Mockito.atLeastOnce()).create(captor.capture());
-
-            assertAll(
-                    () -> assertEquals(trainDTO.getDescription(), result.getDescription()),
-                    () -> assertEquals(trainDTO.getNumber(), result.getNumber()),
-                    () -> assertEquals(trainDTO.getSeatsCount(), result.getSeatsCount())
-            );
+            return new ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
+            throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void testGetAll() throws Exception {
+        ArrayList<ResponseTrainDTO> list = new ArrayList<>(Arrays.asList(TrainStab.getResponseDto()));
+        when(trainService.findAll()).thenReturn(list);
+
+        mvc.perform(get("/api/v2/train/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(content().string(containsString(TrainStab.getResponseDto().getDescription())));
+    }
+
+    @Test
+    void testGetById() throws Exception {
+        when(trainService.findById(Mockito.any())).thenReturn(TrainStab.getResponseDto());
+
+        mvc.perform(get("/api/v2/train/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TrainStab.getResponseDto().getDescription())));
+    }
+
+    @Test
+    void testDeleteById() throws Exception {
+        mvc.perform(delete("/api/v2/train/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testCreate() throws Exception {
+        when(trainService.create(Mockito.any())).thenReturn(TrainStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/train/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(TrainStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TrainStab.getResponseDto().getDescription())));
+    }
+
+    @Test
+    void testUpdate() throws Exception {
+        when(trainService.update(Mockito.any(), Mockito.any())).thenReturn(TrainStab.getResponseDto());
+
+        mvc.perform(put("/api/v2/train/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(TrainStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(TrainStab.getResponseDto().getDescription())));
     }
 }

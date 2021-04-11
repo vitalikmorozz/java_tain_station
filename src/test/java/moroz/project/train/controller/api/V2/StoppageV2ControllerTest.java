@@ -1,118 +1,84 @@
 package moroz.project.train.controller.api.V2;
 
-import javassist.NotFoundException;
-import moroz.project.train.dto.Stoppage.RequestStoppageDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import moroz.project.train.dto.Stoppage.ResponseStoppageDTO;
-import moroz.project.train.entity.Stoppage;
 import moroz.project.train.service.V2.StoppageV2Service;
 import moroz.project.train.stabs.StoppageStab;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith({MockitoExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 class StoppageV2ControllerTest {
-    private StoppageV2Controller stoppageV2ApiController;
-    @Mock
-    private StoppageV2Service stoppageV2Service;
+    @MockBean
+    private StoppageV2Service stoppageService;
 
-    @BeforeEach
-    void setup() {
-        stoppageV2ApiController = new StoppageV2Controller(stoppageV2Service);
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @Test
-    void getAll() {
-        Mockito.when(stoppageV2Service.findAll()).thenReturn(List.of(StoppageStab.getResponseDto()));
-        assertTrue(stoppageV2Service.findAll().size() > 0);
-    }
-
-    @Test
-    void getById() {
-        Stoppage stoppage = StoppageStab.getStoppage();
+    private static String asJsonString(final Object obj) {
         try {
-            Mockito.when(stoppageV2Service.findById(Mockito.any())).thenReturn(StoppageStab.getResponseDto());
-            ResponseStoppageDTO result = stoppageV2ApiController.getById(StoppageStab.ID);
-            assertAll(
-                    () -> assertEquals(stoppage.getId(), result.getId()),
-                    () -> assertEquals(stoppage.getStoppageOrder(), result.getStoppageOrder()),
-                    () -> assertEquals(stoppage.getArrivalTime(), result.getArrivalTime()),
-                    () -> assertEquals(stoppage.getDepartureTime(), result.getDepartureTime())
-            );
-            stoppageV2Service.findById(0L);
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void deleteById() {
-        try {
-            stoppageV2Service.deleteById(StoppageStab.ID);
-
-            var captor = ArgumentCaptor.forClass(Long.class);
-            stoppageV2Service.create(StoppageStab.getRequestDto());
-            Mockito.verify(stoppageV2Service, Mockito.atLeastOnce()).deleteById(captor.capture());
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void update() {
-        var captor = ArgumentCaptor.forClass(RequestStoppageDTO.class);
-        var captorId = ArgumentCaptor.forClass(Long.class);
-        RequestStoppageDTO stoppageDTO = StoppageStab.getRequestDto();
-        try {
-            Mockito.when(stoppageV2Service.update(Mockito.any(), Mockito.any())).thenReturn(StoppageStab.getResponseDto());
-
-            ResponseStoppageDTO result = stoppageV2ApiController.update(StoppageStab.ID, StoppageStab.getRequestDto());
-            Mockito.verify(stoppageV2Service, Mockito.atLeastOnce()).update(captorId.capture(), captor.capture());
-
-            assertAll(
-                    () -> assertEquals(stoppageDTO.getStoppageOrder(), result.getStoppageOrder()),
-                    () -> assertEquals(stoppageDTO.getArrivalTime(), result.getArrivalTime()),
-                    () -> assertEquals(stoppageDTO.getDepartureTime(), result.getDepartureTime())
-            );
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void create() {
-        var captor = ArgumentCaptor.forClass(RequestStoppageDTO.class);
-        RequestStoppageDTO stoppageDTO = StoppageStab.getRequestDto();
-
-        try {
-            Mockito.when(stoppageV2Service.create(Mockito.any())).thenReturn(StoppageStab.getResponseDto());
-            ResponseStoppageDTO result = stoppageV2ApiController.create(StoppageStab.getRequestDto());
-
-            Mockito.verify(stoppageV2Service, Mockito.atLeastOnce()).create(captor.capture());
-
-            assertAll(
-                    () -> assertEquals(stoppageDTO.getStoppageOrder(), result.getStoppageOrder()),
-                    () -> assertEquals(stoppageDTO.getArrivalTime(), result.getArrivalTime()),
-                    () -> assertEquals(stoppageDTO.getDepartureTime(), result.getDepartureTime())
-            );
+            return new ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
+            throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void testGetAll() throws Exception {
+        ArrayList<ResponseStoppageDTO> list = new ArrayList<>(Arrays.asList(StoppageStab.getResponseDto()));
+        when(stoppageService.findAll()).thenReturn(list);
+
+        mvc.perform(get("/api/v2/stoppage/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(content().string(containsString(StoppageStab.getResponseDto().getStoppageOrder().toString())));
+    }
+
+    @Test
+    void testGetById() throws Exception {
+        when(stoppageService.findById(Mockito.any())).thenReturn(StoppageStab.getResponseDto());
+
+        mvc.perform(get("/api/v2/stoppage/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty())
+                .andExpect(content().string(containsString(StoppageStab.getResponseDto().getStoppageOrder().toString())));
+    }
+
+    @Test
+    void testDeleteById() throws Exception {
+        mvc.perform(delete("/api/v2/stoppage/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testCreate() throws Exception {
+        when(stoppageService.create(Mockito.any())).thenReturn(StoppageStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/stoppage/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(StoppageStab.getRequestDto())))
+                .andExpect(status().is(400));
+    }
+
+    @Test
+    void testUpdate() throws Exception {
+        when(stoppageService.update(Mockito.any(), Mockito.any())).thenReturn(StoppageStab.getResponseDto());
+
+        mvc.perform(put("/api/v2/stoppage/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(StoppageStab.getRequestDto())))
+                .andExpect(status().is(400));
     }
 }

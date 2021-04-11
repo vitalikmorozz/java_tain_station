@@ -1,111 +1,94 @@
 package moroz.project.train.controller.api.V2;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javassist.NotFoundException;
-import moroz.project.train.dto.Route.RequestRouteDTO;
 import moroz.project.train.dto.Route.ResponseRouteDTO;
-import moroz.project.train.entity.Route;
 import moroz.project.train.service.V2.RouteV2Service;
 import moroz.project.train.stabs.RouteStab;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith({MockitoExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 class RouteV2ControllerTest {
-    private RouteV2Controller RouteV2ApiController;
-    @Mock
-    private RouteV2Service RouteV2Service;
+    @MockBean
+    private RouteV2Service routeService;
 
-    @BeforeEach
-    void setup() {
-        RouteV2ApiController = new RouteV2Controller(RouteV2Service);
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @Test
-    void getAll() {
-        Mockito.when(RouteV2Service.findAll()).thenReturn(List.of(RouteStab.getResponseDto()));
-        assertTrue(RouteV2Service.findAll().size() > 0);
-    }
-
-    @Test
-    void getById() {
-        Route route = RouteStab.getRoute();
+    private static String asJsonString(final Object obj) {
         try {
-            Mockito.when(RouteV2Service.findById(Mockito.any())).thenReturn(RouteStab.getResponseDto());
-            ResponseRouteDTO result = RouteV2ApiController.getById(RouteStab.ID);
-            assertAll(
-                    () -> assertEquals(route.getId(), result.getId())
-            );
-            RouteV2Service.findById(0L);
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void deleteById() {
-        try {
-            RouteV2Service.deleteById(RouteStab.ID);
-
-            var captor = ArgumentCaptor.forClass(Long.class);
-            RouteV2Service.create(RouteStab.getRequestDto());
-            Mockito.verify(RouteV2Service, Mockito.atLeastOnce()).deleteById(captor.capture());
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void update() {
-        var captor = ArgumentCaptor.forClass(RequestRouteDTO.class);
-        var captorId = ArgumentCaptor.forClass(Long.class);
-        RequestRouteDTO routeDTO = RouteStab.getRequestDto();
-        try {
-            Mockito.when(RouteV2Service.update(Mockito.any(), Mockito.any())).thenReturn(RouteStab.getResponseDto());
-
-            ResponseRouteDTO result = RouteV2ApiController.update(RouteStab.ID, RouteStab.getRequestDto());
-            Mockito.verify(RouteV2Service, Mockito.atLeastOnce()).update(captorId.capture(), captor.capture());
-
-            assertAll(
-                    () -> assertEquals(routeDTO.getTrainId(), result.getTrain().getId())
-            );
-        } catch (NotFoundException e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
-        }
-    }
-
-    @Test
-    void create() {
-        var captor = ArgumentCaptor.forClass(RequestRouteDTO.class);
-        RequestRouteDTO routeDTO = RouteStab.getRequestDto();
-
-        try {
-            Mockito.when(RouteV2Service.create(Mockito.any())).thenReturn(RouteStab.getResponseDto());
-            ResponseRouteDTO result = RouteV2ApiController.create(RouteStab.getRequestDto());
-
-            Mockito.verify(RouteV2Service, Mockito.atLeastOnce()).create(captor.capture());
-
-            assertAll(
-                    () -> assertEquals(routeDTO.getTrainId(), result.getTrain().getId())
-            );
+            return new ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {
-            String expectedMessage = "not found";
-            String actualMessage = e.getMessage();
-            assertTrue(actualMessage.contains(expectedMessage));
+            throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void testGetAll() throws Exception {
+        ArrayList<ResponseRouteDTO> list = new ArrayList<>(Arrays.asList(RouteStab.getResponseDto()));
+        when(routeService.findAll()).thenReturn(list);
+
+        mvc.perform(get("/api/v2/route/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void testGetById() throws Exception {
+        when(routeService.findById(Mockito.any())).thenReturn(RouteStab.getResponseDto());
+
+        mvc.perform(get("/api/v2/route/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
+    }
+
+    @Test
+    void testDeleteById() throws Exception {
+        mvc.perform(delete("/api/v2/route/1/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testCreate() throws Exception {
+        when(routeService.create(Mockito.any())).thenReturn(RouteStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/route/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(RouteStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
+    }
+
+    @Test
+    void testUpdate() throws Exception {
+        when(routeService.update(Mockito.any(), Mockito.any())).thenReturn(RouteStab.getResponseDto());
+
+        mvc.perform(put("/api/v2/route/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(RouteStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
+    }
+
+    @Test
+    void testAddStoppageToRoute() throws Exception {
+        when(routeService.addStoppageById(Mockito.any(), Mockito.any())).thenReturn(RouteStab.getResponseDto());
+
+        mvc.perform(post("/api/v2/route/1/stoppage/1/").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(asJsonString(RouteStab.getRequestDto())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
     }
 }
