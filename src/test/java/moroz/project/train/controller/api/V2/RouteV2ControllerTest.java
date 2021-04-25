@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ class RouteV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetAll() throws Exception {
         ArrayList<ResponseRouteDTO> list = new ArrayList<>(Arrays.asList(RouteStab.getResponseDto()));
         when(routeService.findAll()).thenReturn(list);
@@ -51,6 +53,7 @@ class RouteV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetById() throws Exception {
         when(routeService.findById(Mockito.any())).thenReturn(RouteStab.getResponseDto());
 
@@ -60,12 +63,14 @@ class RouteV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testDeleteById() throws Exception {
         mvc.perform(delete("/api/v2/route/1/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testCreate() throws Exception {
         when(routeService.create(Mockito.any())).thenReturn(RouteStab.getResponseDto());
 
@@ -75,6 +80,7 @@ class RouteV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testUpdate() throws Exception {
         when(routeService.update(Mockito.any(), Mockito.any())).thenReturn(RouteStab.getResponseDto());
 
@@ -84,6 +90,7 @@ class RouteV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testAddStoppageToRoute() throws Exception {
         when(routeService.addStoppageById(Mockito.any(), Mockito.any())).thenReturn(RouteStab.getResponseDto());
 

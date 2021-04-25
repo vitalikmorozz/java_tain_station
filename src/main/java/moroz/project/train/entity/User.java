@@ -8,6 +8,7 @@ import moroz.project.train.interfaces.IBaseEntity;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity(name = "users")
@@ -29,4 +30,10 @@ public class User implements IBaseEntity {
 
     @OneToMany(mappedBy = "user")
     private List<Ticket> tickets;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles;
 }
