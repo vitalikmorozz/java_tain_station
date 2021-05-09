@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ class TicketV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetAll() throws Exception {
         ArrayList<ResponseTicketDTO> list = new ArrayList<>(Arrays.asList(TicketStab.getResponseDto()));
         when(ticketService.findAll()).thenReturn(list);
@@ -51,6 +53,7 @@ class TicketV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetById() throws Exception {
         when(ticketService.findById(Mockito.any())).thenReturn(TicketStab.getResponseDto());
 
@@ -61,12 +64,14 @@ class TicketV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testDeleteById() throws Exception {
         mvc.perform(delete("/api/v2/ticket/1/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testCreate() throws Exception {
         when(ticketService.create(Mockito.any())).thenReturn(TicketStab.getResponseDto());
 
@@ -77,6 +82,7 @@ class TicketV2ControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testUpdate() throws Exception {
         when(ticketService.update(Mockito.any(), Mockito.any())).thenReturn(TicketStab.getResponseDto());
 

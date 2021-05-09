@@ -7,6 +7,7 @@ import moroz.project.train.dto.Route.RequestRouteDTO;
 import moroz.project.train.dto.Route.ResponseRouteDTO;
 import moroz.project.train.entity.Route;
 import moroz.project.train.service.V2.RouteV2Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -24,6 +25,7 @@ public class RouteV2Controller extends DtoCrudApiController<Route, RequestRouteD
 
     @ApiOperation(value = "Add stoppage to route")
     @RequestMapping(value = "/{routeId}/stoppage/{stoppageId}", method = RequestMethod.POST)
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseRouteDTO addStoppageToRoute(
             @PathVariable Long stoppageId,
             @PathVariable Long routeId

@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ class TrainV2ApiControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetAll() throws Exception {
         ArrayList<ResponseTrainDTO> list = new ArrayList<>(Arrays.asList(TrainStab.getResponseDto()));
         when(trainService.findAll()).thenReturn(list);
@@ -51,6 +53,7 @@ class TrainV2ApiControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", password = "user", roles = "USER")
     void testGetById() throws Exception {
         when(trainService.findById(Mockito.any())).thenReturn(TrainStab.getResponseDto());
 
@@ -61,12 +64,14 @@ class TrainV2ApiControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testDeleteById() throws Exception {
         mvc.perform(delete("/api/v2/train/1/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testCreate() throws Exception {
         when(trainService.create(Mockito.any())).thenReturn(TrainStab.getResponseDto());
 
@@ -77,6 +82,7 @@ class TrainV2ApiControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testUpdate() throws Exception {
         when(trainService.update(Mockito.any(), Mockito.any())).thenReturn(TrainStab.getResponseDto());
 
